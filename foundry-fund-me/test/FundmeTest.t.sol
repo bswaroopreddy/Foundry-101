@@ -7,14 +7,20 @@ import {FundMe} from "../src/FundMe.sol";
  import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 // Test
 contract FundMeTest is Test {
-   // uint256 number = 1;
+    // uint256 number = 1;
     FundMe fundMe;
+
+    address USER = makeAddr("user");
+    uint256 constant SEND_VALUE = 0.1 ether;
+    uint256 constant STARTING_VALUE = 10 ether;
+   
     function setUp() external {
        // number = 2;
       // fundMe  = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
 
       DeployFundMe deployFundMe = new DeployFundMe();
       fundMe = deployFundMe.run();
+      vm.deal(USER, STARTING_VALUE);
     }
 
     // function testDemo() public {
@@ -35,5 +41,18 @@ contract FundMeTest is Test {
     function testGetVersionIsAccurate() public view {
         uint256 version = fundMe.getVersion();
         assertEq(version, 4);
+    }
+
+    function testFundFailsWithoutEnoughEth() public {
+        vm.expectRevert();
+        fundMe.fund();    // send a 0 value
+    }
+
+    function testFundUpdatesFundedDataStructure() public {
+        vm.prank(USER);
+        fundMe.fund{value: SEND_VALUE}();
+        uint256 amtFunded = fundMe.getAddressToAmountFunded(USER);
+
+        assertEq(amtFunded, SEND_VALUE);
     }
 }
